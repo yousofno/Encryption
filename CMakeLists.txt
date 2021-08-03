@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.17)
+project(encryption)
+include_directories(/usr/local/include/)
+link_directories(/usr/local/lib)
+set(CMAKE_CXX_STANDARD 14)
+add_executable(encryption main.cpp)
+target_link_libraries(encryption libcryptopp.dylib)
