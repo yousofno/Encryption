@@ -42,23 +42,23 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
 
 
     CryptoPP::SecByteBlock key(CryptoPP::AES::DEFAULT_KEYLENGTH);
-   CryptoPP:: SecByteBlock iv(CryptoPP::AES::BLOCKSIZE);
+    CryptoPP:: SecByteBlock iv(CryptoPP::AES::BLOCKSIZE);
 
 
     prng.GenerateBlock(key, key.size());
     prng.GenerateBlock(iv, iv.size());
 
-   CryptoPP:: CBC_Mode< CryptoPP::AES >::Encryption enc;
+    CryptoPP:: CBC_Mode< CryptoPP::AES >::Encryption enc;
     enc.SetKeyWithIV(key, key.size(), iv);
 
 
 //Encrypt R with public key
 
-CryptoPP::HexEncoder keyEncoder;
-keyEncoder.Put(key,key.size());
-keyEncoder.MessageEnd();
+    CryptoPP::HexEncoder keyEncoder;
+    keyEncoder.Put(key,key.size());
+    keyEncoder.MessageEnd();
 
-CryptoPP:: word64 size = keyEncoder.MaxRetrievable();
+    CryptoPP:: word64 size = keyEncoder.MaxRetrievable();
     if(size)
     {
         keyStr.resize(size);
@@ -98,8 +98,8 @@ CryptoPP:: word64 size = keyEncoder.MaxRetrievable();
 
 //encode our raw enc message and key
 
-std::string encodeEcnMessage;
-std::string encodeEncKey;
+    std::string encodeEcnMessage;
+    std::string encodeEncKey;
 
 
 
@@ -113,32 +113,21 @@ std::string encodeEncKey;
         encodeMessage.Get((CryptoPP::byte*)&encodeEcnMessage[0], encodeEcnMessage.size());
     }
 
-std::cout<<"our encode encrypted message is "<<std::endl<<encodeEcnMessage<<std::endl;
+    std::cout<<"our encode encrypted message is "<<std::endl<<encodeEcnMessage<<std::endl;
 
 
+    StringSource ss11((CryptoPP::byte*)&encKeyAndIv[0], encKeyAndIv.length(), true,
+                      new CryptoPP::HexEncoder(
+                              new StringSink(encodeEncKey)
+                      ) // HexEncoder
+    ); // StringSource
 
 
-    CryptoPP::HexEncoder encodedKey;
-    encodedKey.Put((CryptoPP::byte*)&encKeyAndIv[0],encKeyAndIv.size());
-    encodedKey.MessageEnd();
-    CryptoPP:: word64 size4 = encodedKey.MaxRetrievable();
-    if(size4)
-    {
-        encodeEncKey.resize(size);
-        encodedKey.Get((CryptoPP::byte*)&encodeEncKey[0], encodeEncKey.size());
-    }
-
-    std::cout<<"our encode encrypted key is "<<std::endl<<encodeEncKey<<std::endl;
-
-
-
-
-
-
+    std::cout<<"our encode encrypted key is "<<encodeEncKey<<std::endl;
 
 //create format
-std::string myFormat =  std::to_string(encodeEncKey.length()) +encodeEncKey + std::to_string(encodeEcnMessage.length()) + encodeEcnMessage ;
-std::cout<<"our format is "<<std::endl<<myFormat<<std::endl;
+    std::string myFormat =  encodeEncKey  + encodeEcnMessage ;
+    std::cout<<"our format is "<<std::endl<<myFormat<<std::endl;
 
 
 //create MD5 out of our format
@@ -163,23 +152,104 @@ std::cout<<"our format is "<<std::endl<<myFormat<<std::endl;
         encMd5.resize(size);
         encodeMd5.Get((CryptoPP::byte*)&encMd5[0], encMd5.size());
     }
- std::cout << "Hash md5 is: "<<encMd5<<std::endl;
+    std::cout << "Hash md5 is: "<<encMd5<<std::endl;
 
 
     //return our output
 
 
-    return "our output is " + encMd5+myFormat;
+    return  encMd5+myFormat;
 
 
 }
-void decMe(){
+void decMe(AutoSeededRandomPool& R , ECIES<ECP>::Decryptor pri , std::string str){
+    //check the md5 hash
+    std::string md5;
+    std::string format;
+    std::string encodedMessage;
+    std::string encodedKey;
+
+    for(int a=0;a<=31;a++){
+
+        md5 += str[a];
+
+    }
+
+    std::cout<<"md5 hash is ->" <<md5<<std::endl;
+
+    for(int b = 32 ; b<=str.length();b++){
+        format += str[b];
+    }
+
+    std::cout<<"format  is ->" <<format<<std::endl;
 
 
 
 
 
+
+//get  encoded key and iv from format
+
+    for(int a=0;a<=297;a++){
+
+        encodedKey += format[a];
+
+
+    }
+    std::cout<<"encrypted encoded key and iv ->"<<encodedKey<<std::endl;
+
+
+
+//get encoded message from format
+
+
+    for(int a=298;a<=format.length();a++){
+
+        encodedMessage += format[a];
+
+
+    }
+    std::cout<<"encrypted encoded message ->"<<encodedMessage<<std::endl;
+
+
+
+
+    //decrypt encoded key and iv
+    std::string decodeKeyAndIv;
+    StringSource ss(encodedKey, true,
+                    new CryptoPP::HexDecoder(
+                            new StringSink(decodeKeyAndIv)
+                    )
+    );
+
+    std::string decryptKeyAndIv;
+
+//decrypt it with our private key
+
+    StringSource ss2 (decodeKeyAndIv, true, new PK_DecryptorFilter(R, pri, new StringSink(decryptKeyAndIv) ) );
+    std::string key;
+    std::string iv;
+    for(int a=0;a<=31;a++){
+        key += decryptKeyAndIv[a];
+    }
+    for(int b = 32;b<=decryptKeyAndIv.length();b++){
+        iv += decryptKeyAndIv[b];
+    }
+
+
+    std::cout<<"recived key is " <<key<<std::endl;
+    std::cout<<"recived iv is "<<iv<<std::endl;
+
+
+    //decrypt the message
+
+    
+    
+    
+    
 }
+
+
 
 
 int main()
@@ -189,12 +259,10 @@ int main()
     AutoSeededRandomPool R;
     ECIES<ECP>::Decryptor pri(R, ASN1::secp256r1());
     ECIES<ECP>::Encryptor pub(pri);
-    std::cout<<encMe(R,myMessage,pub);
+    std::string outPut = encMe(R,myMessage,pub);
+    std::cout<<"-------------------------------------------dec func -------------------------------"<<std::endl;
+    decMe(R,pri,outPut);
 
-
-
-
-
-
+    
 
 }
