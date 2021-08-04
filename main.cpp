@@ -83,7 +83,7 @@ CryptoPP:: word64 size = keyEncoder.MaxRetrievable();
 
 
 
-    StringSource ss1 (std::string(keyStr + ivStr), true, new PK_EncryptorFilter(prng, pubKey, new StringSink(encKeyAndIv)) );
+    StringSource ss1 (std::string(keyStr + ivStr), true, new PK_EncryptorFilter(R, pubKey, new StringSink(encKeyAndIv)) );
 
     std::cout<<"raw encrypted key and iv is "<<std::endl<<encKeyAndIv<<std::endl;
 
