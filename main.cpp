@@ -1,3 +1,4 @@
+
 #include<iostream>
 #include<cryptopp/md5.h>
 #include "cryptopp/cryptlib.h"
@@ -54,16 +55,6 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
 
 //Encrypt R with public key
 
-//    CryptoPP::HexEncoder keyEncoder;
-//    keyEncoder.Put(key,key.size());
-//    keyEncoder.MessageEnd();
-//
-//    CryptoPP:: word64 size = keyEncoder.MaxRetrievable();
-//    if(size)
-//    {
-//        keyStr.resize(size);
-//        keyEncoder.Get((CryptoPP::byte*)&keyStr[0], keyStr.size());
-//    }
 
 
     StringSource s1(key, key.size(), true,
@@ -76,18 +67,6 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
 
 
     std::cout<<"key is "<<keyStr<<std::endl;
-
-
-//    CryptoPP::HexEncoder ivEncoder;
-//    ivEncoder.Put(iv,iv.size());
-//    ivEncoder.MessageEnd();
-//
-//    CryptoPP:: word64 size2 = ivEncoder.MaxRetrievable();
-//    if(size2)
-//    {
-//        ivStr.resize(size2);
-//        ivEncoder.Get((CryptoPP::byte*)&ivStr[0], ivStr.size());
-//    }
 
 
 
@@ -121,17 +100,6 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
     std::string encodeEcnMessage;
     std::string encodeEncKey;
 
-
-//
-//    CryptoPP::HexEncoder encodeMessage;
-//    encodeMessage.Put((CryptoPP::byte*)&encMessage[0],encMessage.size());
-//    encodeMessage.MessageEnd();
-//    CryptoPP:: word64 size3 = encodeMessage.MaxRetrievable();
-//    if(size3)
-//    {
-//        encodeEcnMessage.resize(size);
-//        encodeMessage.Get((CryptoPP::byte*)&encodeEcnMessage[0], encodeEcnMessage.size());
-//    }
 
 
 
@@ -173,14 +141,7 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
 
 
     std::cout<<"raw md5 is"<<std::endl<<rawMd5<<std::endl;
-//    encodeMd5.Put((CryptoPP::byte*)&rawMd5[0],rawMd5.size());
-//    encodeMd5.MessageEnd();
-//    CryptoPP:: word64 size5 = encodeMd5.MaxRetrievable();
-//    if(size5)
-//    {
-//        encMd5.resize(size);
-//        encodeMd5.Get((CryptoPP::byte*)&encMd5[0], encMd5.size());
-//    }
+
 
     StringSource s5((CryptoPP::byte*)&rawMd5[0], rawMd5.length(), true,
                      new CryptoPP::HexEncoder(
@@ -189,7 +150,7 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
     ); // StringSource
 
 
-    
+
     std::cout << "Hash md5 is: "<<encMd5<<std::endl;
 
 
