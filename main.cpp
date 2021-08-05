@@ -1,4 +1,3 @@
-
 #include<iostream>
 #include<cryptopp/md5.h>
 #include "cryptopp/cryptlib.h"
@@ -57,23 +56,27 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
 
 
 
-    StringSource s1(key, key.size(), true,
-                      new CryptoPP::HexEncoder(
-                              new StringSink(keyStr)
-                      ) // HexEncoder
+    std::string strKey((char *)key.BytePtr());
+    std::string strIv((char *)iv.BytePtr());
+
+
+    StringSource s1((CryptoPP::byte*)&strKey[0], strKey.size(), true,
+                    new CryptoPP::HexEncoder(
+                            new StringSink(keyStr)
+                    ) // HexEncoder
     ); // StringSource
 
 
 
 
-    std::cout<<"key is "<<keyStr<<std::endl;
+    std::cout<<"key is "<<std::endl<<keyStr<<std::endl;
 
 
 
-    StringSource s2(iv, iv.size(), true,
-                      new CryptoPP::HexEncoder(
-                              new StringSink(ivStr)
-                      ) // HexEncoder
+    StringSource s2((CryptoPP::byte*)&strIv[0], strIv.size(), true,
+                    new CryptoPP::HexEncoder(
+                            new StringSink(ivStr)
+                    ) // HexEncoder
     ); // StringSource
 
 
@@ -82,15 +85,16 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
 
 
 
-    StringSource ss1 (std::string(keyStr + ivStr), true, new PK_EncryptorFilter(R, pubKey, new StringSink(encKeyAndIv)) );
+    StringSource ss1 (std::string(keyStr +"/"+ ivStr), true, new PK_EncryptorFilter(R, pubKey, new StringSink(encKeyAndIv)) );
 
     std::cout<<"raw encrypted key and iv is "<<std::endl<<encKeyAndIv<<std::endl;
+
+
 
 
 //Encrypt message with R
     StringSource s(myData, true, new CryptoPP::StreamTransformationFilter(enc,new StringSink(encMessage)));
     std::cout<<"raw enc message is "<<std::endl<<encMessage<<std::endl;
-
 
 
 
@@ -114,16 +118,16 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
     std::cout<<"our encode encrypted message is "<<std::endl<<encodeEcnMessage<<std::endl;
 
     StringSource ss4((CryptoPP::byte*)&encKeyAndIv[0], encKeyAndIv.length(), true,
-                      new CryptoPP::HexEncoder(
-                              new StringSink(encodeEncKey)
-                      ) // HexEncoder
+                     new CryptoPP::HexEncoder(
+                             new StringSink(encodeEncKey)
+                     ) // HexEncoder
     ); // StringSource
 
 
     std::cout<<"our encode encrypted key is "<<encodeEncKey<<std::endl;
 
 //create format
-    std::string myFormat =  encodeEncKey  + encodeEcnMessage ;
+    std::string myFormat =  encodeEncKey  +"/"+ encodeEcnMessage ;
     std::cout<<"our format is "<<std::endl<<myFormat<<std::endl;
 
 
@@ -144,9 +148,9 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
 
 
     StringSource s5((CryptoPP::byte*)&rawMd5[0], rawMd5.length(), true,
-                     new CryptoPP::HexEncoder(
-                             new StringSink(encMd5)
-                     ) // HexEncoder
+                    new CryptoPP::HexEncoder(
+                            new StringSink(encMd5)
+                    ) // HexEncoder
     ); // StringSource
 
 
@@ -165,8 +169,8 @@ void decMe(AutoSeededRandomPool& R , ECIES<ECP>::Decryptor pri , std::string str
     //check the md5 hash
     std::string md5;
     std::string format;
-    std::string encodedMessage;
-    std::string encodedKey;
+    std::string encodedEncryptedMessage;
+    std::string encodedEncryptedKeyAndIv;
 
     for(int a=0;a<=31;a++){
 
@@ -175,75 +179,109 @@ void decMe(AutoSeededRandomPool& R , ECIES<ECP>::Decryptor pri , std::string str
     }
 
     std::cout<<"md5 hash is ->" <<md5<<std::endl;
+    for(int b=32;b<=str.length();b++){
+        format+= str[b];
+    }
+    std::cout<<"format is -> "<<format<<std::endl;
 
-    for(int b = 32 ; b<=str.length();b++){
-        format += str[b];
+    for(int c = 0;c<=format.length();c++){
+        if(format[c] == '/'){
+            break;
+        }else{
+            encodedEncryptedKeyAndIv += format[c];
+        }
     }
 
-    std::cout<<"format  is ->" <<format<<std::endl;
 
 
-
-
-
-
-//get  encoded key and iv from format
-
-    for(int a=0;a<=297;a++){
-
-        encodedKey += format[a];
-
-
+    for(int d = format.length();d>=0;d--){
+        if(format[d] == '/'){
+            break;
+        }else{
+            encodedEncryptedMessage.insert(encodedEncryptedMessage.begin(),format[d]);
+        }
     }
-    std::cout<<"encrypted encoded key and iv ->"<<encodedKey<<std::endl;
-
-
-
-//get encoded message from format
-
-
-    for(int a=298;a<=format.length();a++){
-
-        encodedMessage += format[a];
-
-
-    }
-    std::cout<<"encrypted encoded message ->"<<encodedMessage<<std::endl;
 
 
 
 
-    //decrypt encoded key and iv
-    std::string decodeKeyAndIv;
-    StringSource ss(encodedKey, true,
+
+    //decrypt key and iv
+    //decode key and iv
+    std::string decodedEncryptedKeyAndIv;
+    StringSource s1(encodedEncryptedKeyAndIv, true,
                     new CryptoPP::HexDecoder(
-                            new StringSink(decodeKeyAndIv)
+                            new StringSink(decodedEncryptedKeyAndIv)
                     )
     );
 
-    std::string decryptKeyAndIv;
+    //decrypt wiht our private key
+    std::string decodeDecryptedKeyAndIv;
+    StringSource ss2 (decodedEncryptedKeyAndIv, true, new PK_DecryptorFilter(R, pri, new StringSink(decodeDecryptedKeyAndIv) ) );
 
-//decrypt it with our private key
-
-    StringSource s1 (decodeKeyAndIv, true, new PK_DecryptorFilter(R, pri, new StringSink(decryptKeyAndIv) ) );
     std::string key;
     std::string iv;
-    for(int a=0;a<=31;a++){
-        key += decryptKeyAndIv[a];
+
+    for(int e = 0;e<=decodeDecryptedKeyAndIv.length();e++){
+        if(decodeDecryptedKeyAndIv[e] == '/'){
+            break;
+        }else{
+            key+= decodeDecryptedKeyAndIv[e];
+        }
     }
-    for(int b = 32;b<=decryptKeyAndIv.length();b++){
-        iv += decryptKeyAndIv[b];
+    for(int f = decodeDecryptedKeyAndIv.length() ; f>=0 ; f--){
+        if(decodeDecryptedKeyAndIv[f] == '/'){
+            break;
+        }else{
+            iv.insert(iv.begin(),decodeDecryptedKeyAndIv[f]);
+        }
     }
 
 
-    std::cout<<"recived key is " <<key<<std::endl;
-    std::cout<<"recived iv is "<<iv<<std::endl;
 
 
-    //decrypt the message
+    std::string decodedEncryptedMessage;
+    StringSource s2(encodedEncryptedMessage, true,
+                    new CryptoPP::HexDecoder(
+                            new StringSink(decodedEncryptedMessage)
+                    )
+    );
+
+
+    std::string decodeKey;
+    std::string decodeIv;
+
+    StringSource s3(key, true,
+                    new CryptoPP::HexDecoder(
+                            new StringSink(decodeKey)
+                    )
+    );
+    StringSource s4(iv, true,
+                    new CryptoPP::HexDecoder(
+                            new StringSink(decodeIv)
+                    )
+    );
 
 
 
+
+
+    std::string message;
+
+
+
+    CryptoPP:: CBC_Mode< CryptoPP::AES >::Decryption dec;
+    dec.SetKeyWithIV((CryptoPP::byte*)&decodeKey[0], 16, (CryptoPP::byte*)&decodeIv[0]);
+
+
+       StringSource s(decodedEncryptedMessage, true,
+            new CryptoPP::StreamTransformationFilter(dec,
+                new StringSink(message)
+            ) // StreamTransformationFilter
+        ); // StringSource
+
+
+std::cout<<"message is->"<<message;
 
 
 }
@@ -254,7 +292,7 @@ void decMe(AutoSeededRandomPool& R , ECIES<ECP>::Decryptor pri , std::string str
 int main()
 {
 
-    char* myMessage = "Hello world";
+    char* myMessage = "Hi";
     AutoSeededRandomPool R;
     ECIES<ECP>::Decryptor pri(R, ASN1::secp256r1());
     ECIES<ECP>::Encryptor pub(pri);
