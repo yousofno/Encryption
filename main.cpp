@@ -56,11 +56,7 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
 
 
 
-    std::string strKey((char *)key.BytePtr());
-    std::string strIv((char *)iv.BytePtr());
-
-
-    StringSource s1((CryptoPP::byte*)&strKey[0], strKey.size(), true,
+    StringSource s1(key.BytePtr(), key.size(), true,
                     new CryptoPP::HexEncoder(
                             new StringSink(keyStr)
                     ) // HexEncoder
@@ -73,7 +69,7 @@ std::string encMe(AutoSeededRandomPool& R ,char* myData  , ECIES<ECP>::Encryptor
 
 
 
-    StringSource s2((CryptoPP::byte*)&strIv[0], strIv.size(), true,
+    StringSource s2(iv.BytePtr(), iv.size(), true,
                     new CryptoPP::HexEncoder(
                             new StringSink(ivStr)
                     ) // HexEncoder
@@ -274,14 +270,14 @@ void decMe(AutoSeededRandomPool& R , ECIES<ECP>::Decryptor pri , std::string str
     dec.SetKeyWithIV((CryptoPP::byte*)&decodeKey[0], 16, (CryptoPP::byte*)&decodeIv[0]);
 
 
-       StringSource s(decodedEncryptedMessage, true,
-            new CryptoPP::StreamTransformationFilter(dec,
-                new StringSink(message)
-            ) // StreamTransformationFilter
-        ); // StringSource
+    StringSource s(decodedEncryptedMessage, true,
+                   new CryptoPP::StreamTransformationFilter(dec,
+                                                            new StringSink(message)
+                   ) // StreamTransformationFilter
+    ); // StringSource
 
 
-std::cout<<"message is->"<<message;
+    std::cout<<"message is->"<<message;
 
 
 }
